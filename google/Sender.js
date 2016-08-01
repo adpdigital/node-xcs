@@ -43,8 +43,8 @@ function Sender(senderID, serverKey, type) {
         preferredSaslMechanism: Constants.FCM_PREFERRED_SASL
     });
 
-    this.client.connection.socket.setTimeout(0);
-    this.client.connection.socket.setKeepAlive(true, 10000);
+    this.client.connection.socket.setTimeout(60000);
+    this.client.connection.socket.setKeepAlive(true, 30000);
 
     this.client.on('online', function () {
         self.events.emit('connected', self.connectionType);
@@ -90,8 +90,8 @@ function Sender(senderID, serverKey, type) {
                 case 'ack':
                     if (data.message_id in self.acks) {
                         var result = new Result().from(data.from).messageId(data.message_id)
-                            .messageType(data.message_type).registrationId(data.registration_id).error(data.error)
-                            .errorDescription(data.error_description).build();
+                          .messageType(data.message_type).registrationId(data.registration_id).error(data.error)
+                          .errorDescription(data.error_description).build();
                         self.acks[data.message_id](result);
                         delete self.acks[data.message_id];
                     }
@@ -179,7 +179,6 @@ function messageToJson(message, to) {
     setJsonField(jsonMessage, Constants.PARAM_DELAY_WHILE_IDLE, message.isDelayWhileIdle());
     setJsonField(jsonMessage, Constants.PARAM_DRY_RUN, message.isDryRun());
     setJsonField(jsonMessage, Constants.JSON_PAYLOAD, message.getData());
-    setJsonField(jsonMessage, Constants.JSON_MUTABLE_CONTENT, message.getMutableContent());
 
     var notification = message.getNotification();
     if (notification) {
@@ -225,7 +224,9 @@ function setJsonField(json, field, value) {
         //Ignore false values since they are generally default values.
         return;
     }
-    json[field] = value;
+    if (Object.keys(value).length > 0) {
+      json[field] = value;
+    }
 }
 module.exports = Sender;
 
