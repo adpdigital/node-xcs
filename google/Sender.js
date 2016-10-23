@@ -38,7 +38,7 @@ function Sender(senderID, serverKey) {
     this.client.connection.socket.setKeepAlive(true, 30000);
 
     this.client.on('online', function () {
-        console.log("@@@@@@@@@@ ONLINE @@@@@@@@@@@@");
+        console.log("@@@@@@@@@@ GCM-XCS ONLINE @@@@@@@@@@@@");
         self.events.emit('connected');
 
         if (self.draining) {
@@ -52,7 +52,7 @@ function Sender(senderID, serverKey) {
     });
 
     this.client.on('close', function () {
-        console.log("@@@@@@@@@@ CLOSE @@@@@@@@@@@@");
+        console.log("@@@@@@@@@@ GCM-XCS CLOSE @@@@@@@@@@@@");
         if (self.draining) {
             self.client.connect();
         } else {
@@ -61,7 +61,7 @@ function Sender(senderID, serverKey) {
     });
 
     this.client.on('error', function (e) {
-        console.log("@@@@@@@@@@ ERROR @@@@@@@@@@@@ ", e);
+        console.log("@@@@@@@@@@ GCM-XCS ERROR @@@@@@@@@@@@ ", e);
         self.events.emit('error', e);
     });
 
@@ -82,7 +82,7 @@ function Sender(senderID, serverKey) {
 
                 case 'nack':
                 case 'ack':
-                    console.log("@@@@@@@@@@@@ ACK ", data.message_id);
+                    // console.log("@@@@@@@@@@@@ ACK ", data.message_id);
                     if (data.message_id in self.acks) {
                         var result = new Result().from(data.from).messageId(data.message_id)
                           .messageType(data.message_type).registrationId(data.registration_id).error(data.error)
@@ -100,7 +100,7 @@ function Sender(senderID, serverKey) {
                             message_type: 'ack'
                         });
                     }
-                    console.log("@@@@@@@@@@ DELIVERY ", data.message_id);
+                    // console.log("@@@@@@@@@@ DELIVERY ", data.message_id);
                     self.events.emit('receipt', data.message_id, data.from, data.data, data.category);
                     break;
 
@@ -129,11 +129,11 @@ function Sender(senderID, serverKey) {
 
 Sender.prototype._send = function (json) {
     if (this.draining) {
-        console.log("@@@@@@@@@@@ Draining GCM ", json.message_id);
+        // console.log("@@@@@@@@@@@ Draining GCM ", json.message_id);
         this.queued.push(json);
     } else {
         var message = new xmpp.Message().c('gcm', {xmlns: 'google:mobile:data'}).t(JSON.stringify(json));
-        console.log("@@@@@@@@@@@@ Sending GCM ", json.message_id );
+        // console.log("@@@@@@@@@@@@ Sending GCM ", json.message_id );
         this.client.send(message);
     }
 };
