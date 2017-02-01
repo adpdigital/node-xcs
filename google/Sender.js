@@ -10,32 +10,41 @@ var Events = require('events').EventEmitter;
 /**
  * Helper class to send messages to the FCM service using an API Key.
  */
-function Sender(senderID, serverKey) {
+function Sender(senderID, serverKey, type) {
     if (util.isNullOrUndefined(senderID || util.isNullOrUndefined(serverKey))) {
         throw new IllegalArgumentException();
     }
     this.senderId = senderID;
     this.serverKey = serverKey;
+    this.connectionType = Constants.FCM_PRODUCTION_IDX;  // Default to Production
 
     this.events = new Events();
     this.draining = true;
     this.queued = [];
     this.acks = [];
 
+	// Set default port to Production
+	var fcmPort = Constants.FCM_SEND_PRODUCTION_PORT;
+
+    if (type && type === Constants.FCM_DEVELOPMENT_IDX ) {
+		fcmPort = Constants.FCM_SEND_DEVELOPMENT_PORT;
+        this.connectionType = Constants.FCM_DEVELOPMENT_IDX;
+	}
+
     var self = this;
 
     this.client = new xmpp.Client({
         jid: this.senderId + '@gcm.googleapis.com',
         password: this.serverKey,
-        port: Constants.FCM_SEND_PORT,
+        port: fcmPort,
         host: Constants.FCM_SEND_ENDPOINT,
         reconnect: true,
         legacySSL: true,
         preferredSaslMechanism: Constants.FCM_PREFERRED_SASL
     });
 
-    this.client.connection.socket.setTimeout(60000);
-    this.client.connection.socket.setKeepAlive(true, 30000);
+    this.client.connection.socket.setTimeout(0);
+    this.client.connection.socket.setKeepAlive(true, 10000);
 
     this.client.on('online', function () {
         console.log("@@@@@@@@@@ GCM-XCS ONLINE @@@@@@@@@@@@");
@@ -56,7 +65,7 @@ function Sender(senderID, serverKey) {
         if (self.draining) {
             self.client.connect();
         } else {
-            self.events.emit('disconnected');
+            self.events.emit('disconnected', self.connectionType);
         }
     });
 
@@ -85,8 +94,8 @@ function Sender(senderID, serverKey) {
                     // console.log("@@@@@@@@@@@@ ACK ", data.message_id);
                     if (data.message_id in self.acks) {
                         var result = new Result().from(data.from).messageId(data.message_id)
-                          .messageType(data.message_type).registrationId(data.registration_id).error(data.error)
-                          .errorDescription(data.error_description).build();
+                            .messageType(data.message_type).registrationId(data.registration_id).error(data.error)
+                            .errorDescription(data.error_description).build();
                         self.acks[data.message_id](result);
                         delete self.acks[data.message_id];
                     }
@@ -207,14 +216,22 @@ function nonNull(argument) {
     return argument;
 }
 /**
- * Sets a JSON field, but only if the value is not {@literal null}.
+ * Sets a JSON field. Ignored if the value is {@literal null} or {@literal undefined} or {@literal false}
  */
 function setJsonField(json, field, value) {
-    if (value) {
-        if (Object.keys(value).length > 0) {
-            json[field] = value;
-        }
+    if (value === undefined && typeof value === 'undefined') {
+        //Ignore undefined values
+        return;
     }
+    if (value === null) {
+        //Ignore null values
+        return;
+    }
+    if (typeof value === 'boolean' && value === false) {
+        //Ignore false values since they are generally default values.
+        return;
+    }
+    json[field] = value;
 }
 module.exports = Sender;
 
