@@ -47,7 +47,7 @@ function Sender(senderID, serverKey, type) {
     this.client.connection.socket.setKeepAlive(true, 10000);
 
     this.client.on('online', function () {
-        console.log("@@@@@@@@@@ GCM-XCS ONLINE @@@@@@@@@@@@");
+        // console.log("@@@@@@@@@@ GCM-XCS ONLINE @@@@@@@@@@@@");
         self.events.emit('connected');
 
         if (self.draining) {
@@ -61,7 +61,7 @@ function Sender(senderID, serverKey, type) {
     });
 
     this.client.on('close', function () {
-        console.log("@@@@@@@@@@ GCM-XCS CLOSE @@@@@@@@@@@@");
+        // console.log("@@@@@@@@@@ GCM-XCS CLOSE @@@@@@@@@@@@");
         if (self.draining) {
             self.client.connect();
         } else {
@@ -70,7 +70,7 @@ function Sender(senderID, serverKey, type) {
     });
 
     this.client.on('error', function (e) {
-        console.log("@@@@@@@@@@ GCM-XCS ERROR @@@@@@@@@@@@ ", e);
+        // console.log("@@@@@@@@@@ GCM-XCS ERROR @@@@@@@@@@@@ ", e);
         self.events.emit('error', e);
     });
 
