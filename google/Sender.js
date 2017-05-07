@@ -231,9 +231,7 @@ function setJsonField(json, field, value) {
         return;
     }
     if (Object.keys(value).length > 0) {
-      if (Object.keys(value).length > 0) {
-        json[field] = value;
-      }
+      json[field] = value;
     }
 }
 module.exports = Sender;
