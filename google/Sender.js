@@ -43,8 +43,8 @@ function Sender(senderID, serverKey, type) {
         preferredSaslMechanism: Constants.FCM_PREFERRED_SASL
     });
 
-    this.client.connection.socket.setTimeout(60000);
-    this.client.connection.socket.setKeepAlive(true, 30000);
+    this.client.connection.socket.setTimeout(0);
+    this.client.connection.socket.setKeepAlive(true, 10000);
 
     this.client.on('online', function () {
         self.events.emit('connected', self.connectionType);
@@ -60,7 +60,6 @@ function Sender(senderID, serverKey, type) {
     });
 
     this.client.on('close', function () {
-        console.log("@@@@@@@@@@ GCM-XCS CLOSE @@@@@@@@@@@@");
         if (self.draining) {
             self.client.connect();
         } else {
@@ -69,7 +68,6 @@ function Sender(senderID, serverKey, type) {
     });
 
     this.client.on('error', function (e) {
-        console.log("@@@@@@@@@@ GCM-XCS ERROR @@@@@@@@@@@@ ", e);
         self.events.emit('error', e);
     });
 
@@ -90,7 +88,6 @@ function Sender(senderID, serverKey, type) {
 
                 case 'nack':
                 case 'ack':
-                    // console.log("@@@@@@@@@@@@ ACK ", data.message_id);
                     if (data.message_id in self.acks) {
                         var result = new Result().from(data.from).messageId(data.message_id)
                           .messageType(data.message_type).registrationId(data.registration_id).error(data.error)
@@ -108,7 +105,6 @@ function Sender(senderID, serverKey, type) {
                             message_type: 'ack'
                         });
                     }
-                    // console.log("@@@@@@@@@@ DELIVERY ", data.message_id);
                     self.events.emit('receipt', data.message_id, data.from, data.data, data.category);
                     break;
 
@@ -137,11 +133,9 @@ function Sender(senderID, serverKey, type) {
 
 Sender.prototype._send = function (json) {
     if (this.draining) {
-        // console.log("@@@@@@@@@@@ Draining GCM ", json.message_id);
         this.queued.push(json);
     } else {
         var message = new xmpp.Message().c('gcm', {xmlns: 'google:mobile:data'}).t(JSON.stringify(json));
-        // console.log("@@@@@@@@@@@@ Sending GCM ", json.message_id );
         this.client.send(message);
     }
 };
@@ -230,9 +224,7 @@ function setJsonField(json, field, value) {
         //Ignore false values since they are generally default values.
         return;
     }
-    if (Object.keys(value).length > 0) {
-      json[field] = value;
-    }
+    json[field] = value;
 }
 module.exports = Sender;
 
