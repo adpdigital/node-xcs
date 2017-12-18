@@ -60,7 +60,7 @@ function Sender(senderID, serverKey, type) {
     });
 
     this.client.on('close', function () {
-        if (self.draining) {
+        if (self.draining && !self.errored) {
             self.client.connect();
         } else {
             self.events.emit('disconnected', self.connectionType);
@@ -68,6 +68,9 @@ function Sender(senderID, serverKey, type) {
     });
 
     this.client.on('error', function (e) {
+        if (e.indexOf('XMPP authentication') > -1) {
+            self.errored = true
+        }
         self.events.emit('error', e);
     });
 
